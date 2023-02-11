@@ -45,7 +45,7 @@ export class ItfeedStack extends Stack {
         runtime: lambda.Runtime.NODEJS_14_X,
         handler: 'handler',
         entry: path.join(__dirname, '../lambda/get-aws.ts'),
-        timeout: Duration.seconds(30),
+        timeout: Duration.seconds(10),
         memorySize: 128,
         environment: {
           URL: i.URL,
@@ -61,7 +61,7 @@ export class ItfeedStack extends Stack {
       runtime: lambda.Runtime.NODEJS_14_X,
       handler: 'handler',
       entry: path.join(__dirname, '../lambda/get-jvn.ts'),
-      timeout: Duration.seconds(30),
+      timeout: Duration.seconds(10),
       memorySize: 128,
     });
 
@@ -143,14 +143,12 @@ export class ItfeedStack extends Stack {
     // })
 
     const parallel = new sfn.Parallel(this, 'parallel');
-    // parallel.branch(pass1);
-    parallel.branch(getAWSNewsLambdaENTask.next(notifySlackLambdaTask01));
-    parallel.branch(getAWSNewsLambdaJATask.next(notifySlackLambdaTask02))
-    parallel.branch(getAWSWhatNewLambdaENTask.next(notifySlackLambdaTask03));
-    parallel.branch(getAWSWhatNewLambdaJATask.next(notifySlackLambdaTask04));
+    parallel.branch(getAWSNewsLambdaENTask.next(new sfn.Choice(this, 'itemIsPresent01').when(sfn.Condition.numberGreaterThan('$.Payload[0].COUNT', 0), notifySlackLambdaTask01).otherwise(new sfn.Pass(this, 'pass01'))))
+    parallel.branch(getAWSNewsLambdaJATask.next(new sfn.Choice(this, 'itemIsPresent02').when(sfn.Condition.numberGreaterThan('$.Payload[0].COUNT', 0), notifySlackLambdaTask02).otherwise(new sfn.Pass(this, 'pass02'))))
+    parallel.branch(getAWSWhatNewLambdaENTask.next(new sfn.Choice(this, 'itemIsPresent03').when(sfn.Condition.numberGreaterThan('$.Payload[0].COUNT', 0), notifySlackLambdaTask03).otherwise(new sfn.Pass(this, 'pass03'))))
+    parallel.branch(getAWSWhatNewLambdaJATask.next(new sfn.Choice(this, 'itemIsPresent04').when(sfn.Condition.numberGreaterThan('$.Payload[0].COUNT', 0), notifySlackLambdaTask04).otherwise(new sfn.Pass(this, 'pass04'))))
 
     // TODO: Slack送信失敗時の対応処理 - StepFunctions
-    // TODO: 記事がゼロ件（Payloadが空）のときはSlackに送らない処理
 
     const NotifyStateMachine = new sfn.StateMachine(this, 'NotifyStateMachine', {
       definition: parallel.next(new sfn.Succeed(this, "OK"))

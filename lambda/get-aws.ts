@@ -19,6 +19,7 @@ const URL = process.env.URL as string
 const LANG = process.env.LANG as string
 const TITLE = process.env.TITLE as string
 
+
 export const handler = async () => {
   console.log(`${TITLE}の最新記事を取得します。`)
   const now = new Date();
@@ -30,6 +31,12 @@ export const handler = async () => {
     return putDate >= targetTime
   })
   console.log(`該当データは${news.length}件でした。`)
+  const meta = {
+    URL,
+    LANG,
+    TITLE,
+    COUNT: news.length
+  }
   const array = news.map((i) => {
     return {
       title: i.title,
@@ -37,5 +44,5 @@ export const handler = async () => {
       contentSnippet: i.contentSnippet
     }
   })
-  return array
+  return [meta, array]
 }

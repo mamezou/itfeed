@@ -6,7 +6,7 @@ const ssm = new SSM
 
 export const handler = async function (event: any) {
   console.log(event)
-  const payload = event.Payload
+  const payload = event.Payload[1]
   const date = new Date();
   const displayDate = `${date.getFullYear()}年${(date.getMonth() + 1)}月${date.getDate()}日`;
   const Message: IncomingWebhookSendArguments = {
@@ -15,7 +15,7 @@ export const handler = async function (event: any) {
         type: "header",
         text: {
           type: 'plain_text',
-          text: `${displayDate}のお知らせです`
+          text: `${displayDate} | ${event.Payload[0].TITLE}は${event.Payload[0].COUNT}件のお知らせです`
         },
       }
     ],
