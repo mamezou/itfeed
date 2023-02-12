@@ -118,6 +118,9 @@ export class ItfeedStack extends Stack {
     const notifySlackLambdaTask04 = new tasks.LambdaInvoke(this, 'notifySlackLambdaTask04', {
       lambdaFunction: notifySlackLambda
     })
+    const notifySlackLambdaTask05 = new tasks.LambdaInvoke(this, 'notifySlackLambdaTask05', {
+      lambdaFunction: notifySlackLambda
+    })
 
     // get aws news
     const [getAWSWhatNewLambdaENTask, getAWSWhatNewLambdaJATask, getAWSNewsLambdaENTask, getAWSNewsLambdaJATask] = [...rssLambdas.map((j) => {
@@ -125,6 +128,10 @@ export class ItfeedStack extends Stack {
         lambdaFunction: j
       })
     })]
+    // get jvn news
+    const getJvnLambdaTask = new tasks.LambdaInvoke(this, 'getJvnLambdaTask', {
+      lambdaFunction: getJvnLambda
+    })
     // const translateResultSelector: { [key: string]: string } = {
     //   "inputText.$": "$.TranslatedText"
     // }
@@ -147,6 +154,7 @@ export class ItfeedStack extends Stack {
     parallel.branch(getAWSNewsLambdaJATask.next(new sfn.Choice(this, 'itemIsPresent02').when(sfn.Condition.numberGreaterThan('$.Payload[0].COUNT', 0), notifySlackLambdaTask02).otherwise(new sfn.Pass(this, 'pass02'))))
     parallel.branch(getAWSWhatNewLambdaENTask.next(new sfn.Choice(this, 'itemIsPresent03').when(sfn.Condition.numberGreaterThan('$.Payload[0].COUNT', 0), notifySlackLambdaTask03).otherwise(new sfn.Pass(this, 'pass03'))))
     parallel.branch(getAWSWhatNewLambdaJATask.next(new sfn.Choice(this, 'itemIsPresent04').when(sfn.Condition.numberGreaterThan('$.Payload[0].COUNT', 0), notifySlackLambdaTask04).otherwise(new sfn.Pass(this, 'pass04'))))
+    parallel.branch(getJvnLambdaTask.next(new sfn.Choice(this, 'itemIsPresent05').when(sfn.Condition.numberGreaterThan('$.Payload[0].COUNT', 0), notifySlackLambdaTask05).otherwise(new sfn.Pass(this, 'pass05'))))
 
     // TODO: Slack送信失敗時の対応処理 - StepFunctions
 
