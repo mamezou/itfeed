@@ -55,6 +55,21 @@ export class ItfeedStack extends Stack {
       })
     })
 
+    const rssAzureLambda = new nodeLambda.NodejsFunction(this, 'GetAzureDevBlogLambda', {
+      functionName: 'getAzureDevBlogLambda',
+      runtime: lambda.Runtime.NODEJS_14_X,
+      handler: 'handler',
+      entry: path.join(__dirname, '../lambda/get-azure.ts'),
+      timeout: Duration.seconds(10),
+      memorySize: 128,
+      environment: {
+        URL: 'https://devblogs.microsoft.com/landingpage/',
+        LANG: 'en',
+        TITLE: 'Microsoft Developer Blogs'
+      }
+
+    })
+
     // get jvn iPedia
     const getJvnLambda = new nodeLambda.NodejsFunction(this, 'GetJvnLambda', {
       functionName: 'GetJvnLambda',
@@ -121,6 +136,10 @@ export class ItfeedStack extends Stack {
     const notifySlackLambdaTask05 = new tasks.LambdaInvoke(this, 'notifySlackLambdaTask05', {
       lambdaFunction: notifySlackLambda
     })
+    const notifySlackLambdaTask06 = new tasks.LambdaInvoke(this, 'notifySlackLambdaTask06', {
+      lambdaFunction: notifySlackLambda
+    })
+
 
     // get aws news
     const [getAWSWhatNewLambdaENTask, getAWSWhatNewLambdaJATask, getAWSNewsLambdaENTask, getAWSNewsLambdaJATask] = [...rssLambdas.map((j) => {
@@ -128,6 +147,10 @@ export class ItfeedStack extends Stack {
         lambdaFunction: j
       })
     })]
+    // get azure news
+    const getAzureLambdaTask = new tasks.LambdaInvoke(this, 'getAzureLambdaTask', {
+      lambdaFunction: rssAzureLambda
+    })
     // get jvn news
     const getJvnLambdaTask = new tasks.LambdaInvoke(this, 'getJvnLambdaTask', {
       lambdaFunction: getJvnLambda
@@ -155,6 +178,7 @@ export class ItfeedStack extends Stack {
     parallel.branch(getAWSWhatNewLambdaENTask.next(new sfn.Choice(this, 'itemIsPresent03').when(sfn.Condition.numberGreaterThan('$.Payload[0].COUNT', 0), notifySlackLambdaTask03).otherwise(new sfn.Pass(this, 'pass03'))))
     parallel.branch(getAWSWhatNewLambdaJATask.next(new sfn.Choice(this, 'itemIsPresent04').when(sfn.Condition.numberGreaterThan('$.Payload[0].COUNT', 0), notifySlackLambdaTask04).otherwise(new sfn.Pass(this, 'pass04'))))
     parallel.branch(getJvnLambdaTask.next(new sfn.Choice(this, 'itemIsPresent05').when(sfn.Condition.numberGreaterThan('$.Payload[0].COUNT', 0), notifySlackLambdaTask05).otherwise(new sfn.Pass(this, 'pass05'))))
+    parallel.branch(getAzureLambdaTask.next(new sfn.Choice(this, 'itemIsPresent06').when(sfn.Condition.numberGreaterThan('$.Payload[0].COUNT', 0), notifySlackLambdaTask06).otherwise(new sfn.Pass(this, 'pass06'))))
 
     // TODO: Slack送信失敗時の対応処理 - StepFunctions
 
