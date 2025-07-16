@@ -13,6 +13,7 @@ import {
   aws_sns_subscriptions as subs,
   aws_events as events,
   aws_events_targets as targets,
+  aws_iam as iam,
 } from 'aws-cdk-lib'
 
 import * as path from 'path'
@@ -71,6 +72,11 @@ export class ItfeedStack extends Stack {
       }
     });
 
+    // Grant read access to Parameter Store
+    notifySlackLambda.addToRolePolicy(new iam.PolicyStatement({
+      actions: ['ssm:GetParameter'],
+      resources: [`arn:aws:ssm:${this.region}:${this.account}:parameter${NOTIFY_SLACK_URL_NAME}`]
+    }));
 
     // Event Bridge Rule
     const rule = new events.Rule(this, 'Rule', {
