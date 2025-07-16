@@ -31,6 +31,7 @@ export const handler = async function (event: any) {
   try {
     const command = new GetParameterCommand({
       Name: PARAMETER_STORE_KEY,
+      WithDecryption: true
     });
     const response = await ssmClient.send(command);
     const ssmValue = response.Parameter?.Value as string
