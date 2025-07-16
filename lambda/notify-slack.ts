@@ -1,8 +1,7 @@
-import { Config, SSM } from "aws-sdk";
+import { SSMClient, GetParameterCommand } from "@aws-sdk/client-ssm";
 import { IncomingWebhook, IncomingWebhookSendArguments } from "@slack/webhook";
 const PARAMETER_STORE_KEY = process.env.PARAMETER_STORE_NAME as string
-const config = new Config
-const ssm = new SSM
+const ssmClient = new SSMClient({ region: "ap-northeast-1" });
 
 export const handler = async function (event: any) {
   console.log(event)
@@ -30,17 +29,14 @@ export const handler = async function (event: any) {
 
 
   try {
-    config.update({ region: "ap-northeast-1" })
-    const param = {
+    const command = new GetParameterCommand({
       Name: PARAMETER_STORE_KEY,
-    }
-    const ssmParam = await ssm.getParameter(param).promise();
-    const ssmValue = ssmParam.Parameter?.Value as string
+    });
+    const response = await ssmClient.send(command);
+    const ssmValue = response.Parameter?.Value as string
     const webhook = new IncomingWebhook(ssmValue)
     await webhook.send(Message)
   } catch (e) {
     console.log(e)
   }
 }
-
-

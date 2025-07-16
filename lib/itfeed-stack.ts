@@ -25,24 +25,17 @@ const RSS = [
   { NAME: "getAWSNewsLambdaJA", LAMBDA_PATH: "../lambda/get-aws-news-ja.ts", TITLE: "Amazon Web Servicesブログ(日本語版)", URL: "https://aws.amazon.com/jp/blogs/news/feed/", LANG: "ja" },
 ]
 
-const NOTIFY_SLACK_URL_VALUE = process.env.NOTIFY_SLACK_URL as string
-const NOTIFY_SLACK_URL_NAME = 'NOTIFY_SLACK_URL'
+const NOTIFY_SLACK_URL_NAME = '/itfeed/slack-webhook-url'
 
 export class ItfeedStack extends Stack {
   constructor(scope: Construct, id: string, props?: StackProps) {
     super(scope, id, props);
 
-    // create parameter to ParameterStore
-    const slackUrlParam = new ssm.StringParameter(this, 'SlackUrlParam', {
-      parameterName: NOTIFY_SLACK_URL_NAME,
-      stringValue: NOTIFY_SLACK_URL_VALUE
-    })
-
     // get news from aws(RSS)
     const rssLambdas = RSS.map((i) => {
       return new nodeLambda.NodejsFunction(this, i.NAME, {
         functionName: i.NAME,
-        runtime: lambda.Runtime.NODEJS_14_X,
+        runtime: lambda.Runtime.NODEJS_20_X,
         handler: 'handler',
         entry: path.join(__dirname, '../lambda/get-aws.ts'),
         timeout: Duration.seconds(10),
@@ -58,7 +51,7 @@ export class ItfeedStack extends Stack {
     // get jvn iPedia
     const getJvnLambda = new nodeLambda.NodejsFunction(this, 'GetJvnLambda', {
       functionName: 'GetJvnLambda',
-      runtime: lambda.Runtime.NODEJS_14_X,
+      runtime: lambda.Runtime.NODEJS_20_X,
       handler: 'handler',
       entry: path.join(__dirname, '../lambda/get-jvn.ts'),
       timeout: Duration.seconds(10),
@@ -68,7 +61,7 @@ export class ItfeedStack extends Stack {
     // notify slack
     const notifySlackLambda = new nodeLambda.NodejsFunction(this, 'NotifySlackLambda', {
       functionName: 'NotifySlackLambda',
-      runtime: lambda.Runtime.NODEJS_14_X,
+      runtime: lambda.Runtime.NODEJS_20_X,
       handler: 'handler',
       entry: path.join(__dirname, '../lambda/notify-slack.ts'),
       timeout: Duration.seconds(10),
@@ -78,7 +71,6 @@ export class ItfeedStack extends Stack {
       }
     });
 
-    slackUrlParam.grantRead(notifySlackLambda)
 
     // Event Bridge Rule
     const rule = new events.Rule(this, 'Rule', {
